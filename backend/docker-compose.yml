@@ -1,0 +1,17 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: confortmuebles-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: confortmuebles
+      POSTGRES_USER: confort
+      POSTGRES_PASSWORD: confort123
+    ports:
+      - "15432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
+    name: confortmuebles_postgres_data

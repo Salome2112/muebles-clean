@@ -1,0 +1,93 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum QuoteStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  REJECTED
+}
+
+enum SettlementStatus {
+  PENDING
+  PAID
+}
+
+model Product {
+  id          String      @id @default(uuid())
+  name        String
+  description String?
+  category    String?
+  price       Decimal     @db.Decimal(10, 2)
+  stock       Int         @default(0)
+  quoteItems  QuoteItem[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model Client {
+  id        String   @id @default(uuid())
+  name      String
+  phone     String?
+  email     String?  @unique
+  address   String?
+  quotes    Quote[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Quote {
+  id         String       @id @default(uuid())
+  code       String       @unique
+  clientId   String
+  client     Client       @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  status     QuoteStatus  @default(DRAFT)
+  issueDate  DateTime     @default(now())
+  notes      String?
+  subtotal   Decimal      @db.Decimal(10, 2)
+  tax        Decimal      @db.Decimal(10, 2)
+  discount   Decimal      @db.Decimal(10, 2) @default(0)
+  total      Decimal      @db.Decimal(10, 2)
+  items      QuoteItem[]
+  settlement Settlement?
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+}
+
+model QuoteItem {
+  id          String   @id @default(uuid())
+  quoteId     String
+  productId   String
+  productName String
+  unitPrice   Decimal  @db.Decimal(10, 2)
+  quantity    Int
+  subtotal    Decimal  @db.Decimal(10, 2)
+  quote       Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
+  createdAt   DateTime @default(now())
+
+  @@index([quoteId])
+  @@index([productId])
+}
+
+model Settlement {
+  id         String           @id @default(uuid())
+  code       String           @unique
+  quoteId    String           @unique
+  quote      Quote            @relation(fields: [quoteId], references: [id], onDelete: Restrict)
+  status     SettlementStatus @default(PENDING)
+  subtotal   Decimal          @db.Decimal(10, 2)
+  tax        Decimal          @db.Decimal(10, 2)
+  discount   Decimal          @db.Decimal(10, 2)
+  total      Decimal          @db.Decimal(10, 2)
+  notes      String?
+  paidAt     DateTime?
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+}
